@@ -2,10 +2,6 @@
 
 **Q-learning vs. SARSA for multi-target path planning in grid worlds**
 
-![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)
-![NumPy](https://img.shields.io/badge/NumPy-013243?logo=numpy&logoColor=white)
-![Matplotlib](https://img.shields.io/badge/Matplotlib-11557c)
-![Tests](https://img.shields.io/badge/tests-unittest-success)
 
 在 12×12 的網格中，讓機器人自己學會「**走過所有目標點，再回到起點**」的路線，並比較 **Q-learning** 與 **SARSA** 在「目標密集」與「目標分散」兩種情境下的表現。
 
