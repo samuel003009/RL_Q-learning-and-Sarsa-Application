@@ -5,9 +5,6 @@
 
 在 12×12 的網格中，讓機器人自己學會「**走過所有目標點，再回到起點**」的路線，並比較 **Q-learning** 與 **SARSA** 在「目標密集」與「目標分散」兩種情境下的表現。
 
-<p align="center">
-  <img src="results/delivery_paths.png" width="92%" alt="外送機器人情境：Q-learning 與 SARSA 訓練後的路徑">
-</p>
 
 ## 重點結果
 
@@ -29,9 +26,7 @@
 | 掃地機器人要如何在有家具的室內，找到清掃所有髒污格子的最短路徑，再回到充電座？ | 外送機器人要如何在有建築物的街區，找到送完所有包裹的最短路線，再回到物流中心？ |
 | 幾乎每個空格都是目標 → **目標密集** | 9 個送貨點分散在街區中 → **目標分散** |
 
-<p align="center">
-  <img src="results/maps.png" width="92%" alt="兩種情境的網格地圖">
-</p>
+
 
 ## 環境設定
 
@@ -77,20 +72,13 @@ $$Q(S_t,A_t) \leftarrow Q(S_t,A_t) + \alpha\left[R_{t+1} + \gamma Q(S_{t+1},A_{t
 
 ### 學習曲線
 
-<p align="center">
-  <img src="results/delivery_learning_curves.png" width="80%" alt="外送機器人學習曲線">
-</p>
-<p align="center">
-  <img src="results/vacuum_learning_curves.png" width="80%" alt="掃地機器人學習曲線">
-</p>
+
 
 兩種情境中，Q-learning 的回合步數都下降得比較早，成功率也爬升得比 SARSA 快。以外送情境為例，「最近 100 回合全部完成任務」這件事，Q-learning 在第 3317 回合就做到，SARSA 要到第 6518 回合。
 
 ### 訓練後的路徑（種子 789）
 
-<p align="center">
-  <img src="results/vacuum_paths.png" width="92%" alt="掃地機器人：訓練後的路徑">
-</p>
+
 
 | 情境 | 演算法 | 理想步數 | 實際步數 | 第一次完成任務（回合） | 最後 500 回合成功率 |
 |---|---|---|---|---|---|
@@ -103,9 +91,6 @@ $$Q(S_t,A_t) \leftarrow Q(S_t,A_t) + \alpha\left[R_{t+1} + \gamma Q(S_{t+1},A_{t
 
 單一種子的結果可能是運氣，所以另外用種子 1–10 各重跑一次：
 
-<p align="center">
-  <img src="results/multi_seed.png" width="88%" alt="10 個種子的路徑步數分布">
-</p>
 
 | 情境 | 演算法 | 理想 | 平均步數（標準差） | 最佳 | 最差 | 完成任務 |
 |---|---|---|---|---|---|---|
