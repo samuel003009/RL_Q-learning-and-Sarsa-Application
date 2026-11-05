@@ -1,148 +1,180 @@
-# 強化式學習路徑規劃：Q-learning 與 SARSA 比較
+# 掃地機器人路徑規劃：Q-learning 與 SARSA
 
-**Q-learning vs. SARSA for multi-target path planning in grid worlds**
+用 Q-learning 與 SARSA 訓練掃地機器人，讓它在有家具的 12×12 房間裡清完所有地面，再回到充電座，並比較兩種演算法的路徑長度與理想步數的差距。
 
+<p align="center">
+  <img src="images/qlearning_demo.gif" width="480" alt="掃地機器人依 Q-learning 學到的策略清掃房間的動畫">
+</p>
 
-在 12×12 的網格中，讓機器人自己學會「**走過所有目標點，再回到起點**」的路線，並比較 **Q-learning** 與 **SARSA** 在「目標密集」與「目標分散」兩種情境下的表現。
+## 問題描述
 
+掃地機器人要如何在複雜的室內環境中，找出最短的清掃路徑並回到充電座？
 
-## 重點結果
-
-| 情境 | 理想步數 | Q-learning | SARSA |
-|---|---|---|---|
-| 外送機器人（9 個目標，分散） | 64 | **64**（10 個種子全部達到最短路徑） | 平均 77.0 |
-| 掃地機器人（71 個目標，密集） | 72 | 平均 87.8 | 平均 98.6 |
-
-<sub>10 個隨機種子（1–10）各訓練 8000 回合後，以貪婪策略走一次的步數。</sub>
-
-- **目標分散時兩種演算法都比較好學**：外送情境離理想步數較近（Q-learning 0%、SARSA +20%），掃地情境則差得較多（+22%、+37%）。目標密集時，每走一步幾乎都有 +3 的「局部獎勵」，容易讓策略只顧眼前、不易學到全域最短路徑。
-- **Q-learning 較積極**：步數較少、學得較快（第一次完成任務比 SARSA 早，成功率也爬升得比較快）。
-- **SARSA 較保守**：用「實際會採取的動作（包含探索）」更新，路徑較長，收斂也較慢。
-
-## 問題情境
-
-| 掃地機器人（Robotic vacuum） | 外送機器人（Delivery robot） |
-|---|---|
-| 掃地機器人要如何在有家具的室內，找到清掃所有髒污格子的最短路徑，再回到充電座？ | 外送機器人要如何在有建築物的街區，找到送完所有包裹的最短路線，再回到物流中心？ |
-| 幾乎每個空格都是目標 → **目標密集** | 9 個送貨點分散在街區中 → **目標分散** |
-
-
+本專題把房間轉成格子世界（GridWorld），機器人只能透過與環境互動得到的 reward 學習，事先不知道地圖，也不知道最佳路徑。
 
 ## 環境設定
 
-- **地圖**：12×12 網格，灰色為障礙物（家具／建築物），黃色為目標，`H` 為起點兼終點。
-- **動作**：上、下、左、右。
-- **狀態**：`(row, col, mask)`，`mask` 以位元記錄哪些目標已經走過，讓代理人知道還剩哪些目標。
-- **Q 表**：以 dict 儲存，只記錄實際走過的狀態（掃地情境的 `(位置, mask)` 組合多到無法用陣列存）。
+<table>
+  <tr>
+    <th>房間配置</th>
+    <th>GridWorld 地圖</th>
+  </tr>
+  <tr>
+    <td width="50%"><img src="images/room_layout.jpg" width="100%" alt="房間平面圖，含床、書桌、櫃子與充電座"></td>
+    <td width="50%"><img src="images/environment.png" width="100%" alt="對應的 12×12 GridWorld，灰色為障礙物，金色為髒污格"></td>
+  </tr>
+</table>
 
-**獎勵規則**（兩種情境相同）
+| 項目 | 數量 | 說明 |
+| --- | --- | --- |
+| 地圖 | 144 格 | 12 × 12，座標為 `[row, col]`，`[0, 0]` 在左上角 |
+| 障礙物 | 72 格 | 小桌、雙人床、書桌、三個櫃子、家電 |
+| 髒污格 | 71 格 | 除了障礙物與 Home 以外的所有格子 |
+| Home | 1 格 | `[2, 0]`，機器人的起點與終點 |
 
-| 事件 | 獎勵 |
-|---|---|
-| 移出地圖（停在原地） | −1 |
-| 撞到障礙物（停在原地） | −1 |
-| 一般移動 | −1 |
-| 第一次到達某個目標 | +3 |
-| 所有目標都完成且回到起點（回合結束） | +100 |
+### Reward
+
+| 事件 | Reward |
+| --- | --- |
+| 撞牆，位置不變 | −1 |
+| 撞障礙物，位置不變 | −1 |
+| 成功移動一步 | −1 |
+| 清到新的髒污格 | 額外 +3 |
+| 清完所有髒污並回到 Home | 額外 +100 |
+
+清完所有髒污並回到 Home 時 episode 結束；步數達到 `max_episode_len` 時也會中止。
+
+### State 與 Action
+
+- **State**：`((row, col), dirtyMap 攤平後的 tuple)`。除了機器人位置，還要記錄每一格是否已清掃，否則機器人無法分辨「這格清過了沒」。
+- **Action**：`0` 東、`1` 西、`2` 北、`3` 南。
+- **Q-table**：理論 state 數高達 144 × 2⁷¹，因此使用 dictionary，只記錄實際走過的 state：`q[state] = [Q(E), Q(W), Q(N), Q(S)]`。
 
 ## 演算法
 
-**Q-learning（off-policy）**：以下一個狀態「最好的動作」來更新。
+兩者都用 ε-greedy 選擇動作，差別在更新時看的是哪一個下一步。
 
-$$Q(S_t,A_t) \leftarrow Q(S_t,A_t) + \alpha\left[R_{t+1} + \gamma \max_{a} Q(S_{t+1},a) - Q(S_t,A_t)\right]$$
+**Q-learning**（off-policy）：以下一個 state 中最大的 Q 值更新，不管實際會不會走那一步。
 
-**SARSA（on-policy）**：以下一個狀態「實際會採取的動作」來更新。
+$$Q(S_t,A_t) \leftarrow Q(S_t,A_t) + \alpha\left[R_{t+1} + \gamma \max_a Q(S_{t+1},a) - Q(S_t,A_t)\right]$$
+
+**SARSA**（on-policy）：以下一步實際選到的動作更新，因此探索時的行為也會反映在 Q 值上。
 
 $$Q(S_t,A_t) \leftarrow Q(S_t,A_t) + \alpha\left[R_{t+1} + \gamma Q(S_{t+1},A_{t+1}) - Q(S_t,A_t)\right]$$
 
-兩者都用 ε-greedy 選動作，ε 從 1.0 隨回合線性遞減到 0。
+### 參數
 
-**參數設定**
-
-| 參數 | 值 |
-|---|---|
-| 折扣因子 γ | 0.95 |
-| 學習率 α | 0.3 |
-| 初始 ε | 1.0（線性遞減） |
-| 訓練回合數 | 8000 |
-| 每回合最多步數 | 500 |
-| 亂數種子 | 789 |
+| 參數 | 值 | 說明 |
+| --- | --- | --- |
+| `gamma` | 0.95 | 折扣因子 |
+| `alpha` | 0.3 | 學習率 |
+| `epsilon` | 1.0 | 初始探索率，隨 episode 線性遞減至接近 0 |
+| `num_episodes` | 8000 | 訓練回合數 |
+| `max_episode_len` | 500 | 每回合步數上限 |
+| `prng_seed` | 789 | 隨機種子 |
 
 ## 實驗結果
 
-### 學習曲線
+以下為 8,000 回合訓練後，用 greedy policy 實際跑一次的結果。
 
+| 演算法 | 理想步數 | 實際步數 | 多走步數 | 總 reward | 清掃格數 | 碰撞次數 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Q-learning | 72 | **94** | 22 | 219 | 71 / 71 | 0 |
+| SARSA | 72 | **96** | 24 | 217 | 71 / 71 | 0 |
 
+地圖共有 72 個可走格，每格只走一次並回到 Home 剛好是 72 步，這就是理想步數。
 
-兩種情境中，Q-learning 的回合步數都下降得比較早，成功率也爬升得比 SARSA 快。以外送情境為例，「最近 100 回合全部完成任務」這件事，Q-learning 在第 3317 回合就做到，SARSA 要到第 6518 回合。
+### 行走路徑
 
-### 訓練後的路徑（種子 789）
+路徑上的數字是步數。紅色箭頭代表第一次到達該格，其他顏色代表重複走到已到過的格子，所以紅色以外的線段越多，繞路越多。
 
+<table>
+  <tr>
+    <th>Q-learning（94 步）</th>
+    <th>SARSA（96 步）</th>
+  </tr>
+  <tr>
+    <td><img src="images/qlearning_path.png" alt="Q-learning 的 94 步清掃路徑"></td>
+    <td><img src="images/sarsa_path.png" alt="SARSA 的 96 步清掃路徑"></td>
+  </tr>
+</table>
 
+### 訓練過程
 
-| 情境 | 演算法 | 理想步數 | 實際步數 | 第一次完成任務（回合） | 最後 500 回合成功率 |
-|---|---|---|---|---|---|
-| 掃地機器人 | Q-learning | 72 | 86 | 1565 | 98.8% |
-| 掃地機器人 | SARSA | 72 | 100 | 1745 | 95.2% |
-| 外送機器人 | Q-learning | 64 | **64** | 1071 | 100.0% |
-| 外送機器人 | SARSA | 64 | 66 | 1355 | 99.6% |
+三張圖由上到下是每回合步數、每回合總 reward，以及累積平均 reward。Q-learning 約從第 5,000 回合開始頻繁完成任務，SARSA 則要到第 6,500 回合左右。兩者都在探索率接近 0 的最後幾百回合才穩定下來。
 
-### 換不同亂數種子也成立嗎？
+<table>
+  <tr>
+    <th>Q-learning</th>
+    <th>SARSA</th>
+  </tr>
+  <tr>
+    <td><img src="images/qlearning_training_progress.png" alt="Q-learning 訓練曲線"></td>
+    <td><img src="images/sarsa_training_progress.png" alt="SARSA 訓練曲線"></td>
+  </tr>
+</table>
 
-單一種子的結果可能是運氣，所以另外用種子 1–10 各重跑一次：
+### 訓練回合數的影響
 
+`qlearn_demo.py` 與 `sarsa_esarsa_demo.py` 目前的設定是 20,000 回合，跑出來的結果和上面不同：
 
-| 情境 | 演算法 | 理想 | 平均步數（標準差） | 最佳 | 最差 | 完成任務 |
-|---|---|---|---|---|---|---|
-| 掃地機器人 | Q-learning | 72 | 87.8（1.8） | 84 | 90 | 10/10 |
-| 掃地機器人 | SARSA | 72 | 98.6（5.8） | 92 | 106 | 10/10 |
-| 外送機器人 | Q-learning | 64 | 64.0（0.0） | 64 | 64 | 10/10 |
-| 外送機器人 | SARSA | 64 | 77.0（3.2） | 74 | 82 | 10/10 |
+| 訓練回合數 | Q-learning | SARSA |
+| --- | --- | --- |
+| 8,000 | 94 步 | 96 步 |
+| 20,000 | 86 步 | 106 步 |
+
+這些都是單一 seed 的結果，回合數增加不一定讓路徑變短，兩者的差距也不宜過度解讀。
 
 ## 結論
 
-1. **適用情境**：Q-learning 與 SARSA 都比較適合目標分散的任務。目標密集時，代理人容易被沿途的局部獎勵牽著走，難以針對全域最短路徑做最佳化。
-2. **演算法特性**：
-   - **Q-learning（積極）**：直接朝最佳動作更新，步數較少、收斂較快，重視效率。
-   - **SARSA（保守）**：把探索時可能犯的錯也算進去，步數略多、收斂較慢；一般認為這種保守特性用在實體機器人上，可以降低碰撞等意外的風險。
+- **兩種演算法都能完成任務**：清完全部 71 格、回到 Home，途中沒有撞牆或撞到障礙物。
+- **都比理想步數多走約三成**：髒污格密集時，機器人容易被附近的 +3 局部獎勵吸引，很難針對全域最短路徑最佳化。
+- **Q-learning 較積極，SARSA 較保守**：Q-learning 的步數略少，偏重效率；SARSA 會把探索的風險算進去，步數略多，但較重視路徑安全。
 
 ## 專案結構
 
-```
+```text
 .
-├── main.py                 # 訓練兩種演算法、輸出所有圖表與 CSV
-├── rl_gridworld/
-│   ├── envs.py             # 網格環境、兩張地圖、獎勵規則、理想步數計算
-│   ├── agents.py           # Q-learning、SARSA、ε-greedy、貪婪策略回放
-│   └── plotting.py         # 地圖、學習曲線、路徑、多種子比較圖
-├── tests/
-│   └── test_env.py         # 獎勵規則、理想步數、訓練可重現性的單元測試
-├── results/                # main.py 產生的圖表與 summary.csv、multi_seed.csv
-└── requirements.txt
+├── Vacuum_GridWorld.py      # 環境：地圖、reward、路徑圖與 GIF 繪製
+├── qlearn.py                # Q-learning 訓練與 ε-greedy 策略
+├── qlearn_demo.py           # Q-learning 主程式
+├── sarsa.py                 # SARSA 訓練與 ε-greedy 策略
+├── sarsa_esarsa_demo.py     # SARSA 主程式（目前只有 SARSA，沒有 Expected SARSA）
+├── qlearn_algorithm.py      # qlearn() 的節錄，僅供閱讀，無法單獨執行
+└── images/                  # README 使用的圖片
 ```
 
-## 快速開始
+## 安裝與執行
+
+已用 Python 3.13、NumPy 2.5、Matplotlib 3.11、Pillow 12.3 測試。
 
 ```bash
-git clone https://github.com/<your-account>/rl-gridworld-qlearning-sarsa.git
-cd rl-gridworld-qlearning-sarsa
-pip install -r requirements.txt
-
-python main.py                 # 依上表參數訓練（種子 789），通常 1 分鐘內完成
-python main.py --seeds 10      # 另外用種子 1–10 重跑，做穩健性比較
-python -m unittest discover tests
+pip install "numpy>=2" matplotlib pillow
 ```
-
-其他選項：
 
 ```bash
-python main.py --env delivery --algo sarsa      # 只跑單一情境／演算法
-python main.py --episodes 3000 --alpha 0.2      # 調整參數
-python main.py --help
+python qlearn_demo.py          # 訓練 Q-learning
+python sarsa_esarsa_demo.py    # 訓練 SARSA
 ```
 
-## 關於這個專案
+### 執行前請注意
 
-- 2026/5–2026/6，強化式學習課程期末專題（4 人小組）。
-- 本 repository 依課堂報告的環境、獎勵與參數，整理成可直接執行、結果可重現的版本；README 中的圖表與數字都由本 repo 的程式產生。
-- 技術：Python、強化式學習（Q-learning、SARSA）、NumPy、Matplotlib
+- **重現上方結果**：把兩個 demo 檔裡的 `num_episodes=20000` 改成 `num_episodes=8000`。NumPy 1.x 的數值型別規則不同，同一個 seed 也可能得到不同路徑。
+- **記憶體用量大**：每個 state 都存整張 `dirtyMap`，約佔 6 KB，8,000 回合會累積約 100 萬個 state。8 GB 記憶體不夠完整跑完，建議 8,000 回合準備 16 GB 以上，20,000 回合準備 32 GB 以上。
+- **訓練曲線視窗**：訓練結束後會跳出圖表視窗，關閉後程式才會繼續。沒有圖形介面的環境可以用 `MPLBACKEND=Agg python qlearn_demo.py` 執行。
+- **執行時間**：8,000 回合時，每個 demo 約需 3 到 4 分鐘。
+
+### 輸出檔案
+
+| 內容 | Q-learning | SARSA |
+| --- | --- | --- |
+| 初始環境圖 | `vacuum_initial.png` | `vacuum_initial.png` |
+| 訓練曲線 | `qlearning_training_progress.png` | `sarsa_training_progress.png` |
+| 完整 Q-table | `qtable_output.txt`、`.csv` | `sarsa_qtable_output.txt`、`.csv` |
+| 路徑圖 | `gridworld_path.png` | `sarsa_gridworld_path.png` |
+| 動畫 | `vacuum_gridworld_qlearn.gif` | `sarsa_vacuum_gridworld.gif` |
+| 每一步的畫面 | `vacuum_gridworld_qlearn_png_steps/` | `sarsa_vacuum_gridworld_png_steps/` |
+
+## 組員
+
+楊明霆、章棋翔、朱立軒、蔣淇
