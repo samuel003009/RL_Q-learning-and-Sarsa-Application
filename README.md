@@ -24,7 +24,9 @@
       <img width="962" height="961" alt="image" src="https://github.com/user-attachments/assets/60fd6c59-634f-4496-8756-4c178606d698" />
 
     <td width="50%">
-      <img width="971" height="972" alt="image" src="https://github.com/user-attachments/assets/151aa708-6b33-4f84-bd85-609a813af967" />
+      <img width="971" height="972" alt="image" src="https://github.com/user-attachments/assets/6bf8e09d-652c-48f2-bcac-0a9965deedf8" />
+
+
 
   </tr>
 </table>
