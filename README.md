@@ -20,8 +20,12 @@
     <th>GridWorld 地圖</th>
   </tr>
   <tr>
-    <td width="50%"><img src="images/room_layout.jpg" width="100%" alt="房間平面圖，含床、書桌、櫃子與充電座"></td>
-    <td width="50%"><img src="images/environment.png" width="100%" alt="對應的 12×12 GridWorld，灰色為障礙物，金色為髒污格"></td>
+    <td width="50%">
+      <img width="962" height="961" alt="image" src="https://github.com/user-attachments/assets/60fd6c59-634f-4496-8756-4c178606d698" />
+
+    <td width="50%">
+      <img width="971" height="972" alt="image" src="https://github.com/user-attachments/assets/151aa708-6b33-4f84-bd85-609a813af967" />
+
   </tr>
 </table>
 
