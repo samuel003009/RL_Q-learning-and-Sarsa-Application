@@ -115,8 +115,10 @@ $$Q(S_t,A_t) \leftarrow Q(S_t,A_t) + \alpha\left[R_{t+1} + \gamma Q(S_{t+1},A_{t
     <th>SARSA</th>
   </tr>
   <tr>
-    <td><img src="images/qlearning_training_progress.png" alt="Q-learning 訓練曲線"></td>
-    <td><img src="images/sarsa_training_progress.png" alt="SARSA 訓練曲線"></td>
+    <td><img width="976" height="598" alt="image" src="https://github.com/user-attachments/assets/748cb8b2-ef18-41ef-a266-e1b3bd09f792" />
+</td>
+    <td><img width="1003" height="602" alt="image" src="https://github.com/user-attachments/assets/944849b5-1103-478e-9090-90c8ed50da45" />
+</td>
   </tr>
 </table>
 
