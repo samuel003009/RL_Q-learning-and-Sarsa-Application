@@ -20,14 +20,10 @@
     <th>GridWorld 地圖</th>
   </tr>
   <tr>
-    <td width="50%">
-      <img width="962" height="961" alt="image" src="https://github.com/user-attachments/assets/60fd6c59-634f-4496-8756-4c178606d698" />
-
-    <td width="50%">
-      <img width="971" height="972" alt="image" src="https://github.com/user-attachments/assets/6bf8e09d-652c-48f2-bcac-0a9965deedf8" />
-
-
-
+    <td><img width="962" height="961" alt="image" src="https://github.com/user-attachments/assets/469fd063-8522-470f-9dff-f5f2ad3579f5" />
+</td>
+    <td><img width="971" height="972" alt="image" src="https://github.com/user-attachments/assets/daa15e0e-6641-444e-ac2c-6f3cfbd8ebf8" />
+</td>
   </tr>
 </table>
 
