@@ -96,10 +96,9 @@ $$Q(S_t,A_t) \leftarrow Q(S_t,A_t) + \alpha\left[R_{t+1} + \gamma Q(S_{t+1},A_{t
     <th>SARSA（96 步）</th>
   </tr>
   <tr>
-    <td><img width="820" height="820" alt="image" src="https://github.com/user-attachments/assets/5706340c-9e1d-44a5-89d6-a3f7f18cd809" />
+    <td><img width="828" height="829" alt="image" src="https://github.com/user-attachments/assets/371e9cad-26ce-4cb7-9714-fd90dcf8685b" />
 </td>
-    <td><img width="832" height="832" alt="image" src="https://github.com/user-attachments/assets/210acc24-90d6-477e-8923-f851084924da" />
-</td>
+    <td><img width="829" height="828" alt="image" src="https://github.com/user-attachments/assets/339b1f35-406d-4f39-8719-091c424188f3" />
   </tr>
 </table>
 
