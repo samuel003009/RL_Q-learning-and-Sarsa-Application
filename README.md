@@ -100,8 +100,10 @@ $$Q(S_t,A_t) \leftarrow Q(S_t,A_t) + \alpha\left[R_{t+1} + \gamma Q(S_{t+1},A_{t
     <th>SARSA（96 步）</th>
   </tr>
   <tr>
-    <td><img src="images/qlearning_path.png" alt="Q-learning 的 94 步清掃路徑"></td>
-    <td><img src="images/sarsa_path.png" alt="SARSA 的 96 步清掃路徑"></td>
+    <td><img width="820" height="820" alt="image" src="https://github.com/user-attachments/assets/5706340c-9e1d-44a5-89d6-a3f7f18cd809" />
+</td>
+    <td><img width="832" height="832" alt="image" src="https://github.com/user-attachments/assets/210acc24-90d6-477e-8923-f851084924da" />
+</td>
   </tr>
 </table>
 
@@ -139,38 +141,6 @@ $$Q(S_t,A_t) \leftarrow Q(S_t,A_t) + \alpha\left[R_{t+1} + \gamma Q(S_{t+1},A_{t
 - **都比理想步數多走約三成**：髒污格密集時，機器人容易被附近的 +3 局部獎勵吸引，很難針對全域最短路徑最佳化。
 - **Q-learning 較積極，SARSA 較保守**：Q-learning 的步數略少，偏重效率；SARSA 會把探索的風險算進去，步數略多，但較重視路徑安全。
 
-## 專案結構
-
-```text
-.
-├── Vacuum_GridWorld.py      # 環境：地圖、reward、路徑圖與 GIF 繪製
-├── qlearn.py                # Q-learning 訓練與 ε-greedy 策略
-├── qlearn_demo.py           # Q-learning 主程式
-├── sarsa.py                 # SARSA 訓練與 ε-greedy 策略
-├── sarsa_esarsa_demo.py     # SARSA 主程式（目前只有 SARSA，沒有 Expected SARSA）
-├── qlearn_algorithm.py      # qlearn() 的節錄，僅供閱讀，無法單獨執行
-└── images/                  # README 使用的圖片
-```
-
-## 安裝與執行
-
-已用 Python 3.13、NumPy 2.5、Matplotlib 3.11、Pillow 12.3 測試。
-
-```bash
-pip install "numpy>=2" matplotlib pillow
-```
-
-```bash
-python qlearn_demo.py          # 訓練 Q-learning
-python sarsa_esarsa_demo.py    # 訓練 SARSA
-```
-
-### 執行前請注意
-
-- **重現上方結果**：把兩個 demo 檔裡的 `num_episodes=20000` 改成 `num_episodes=8000`。NumPy 1.x 的數值型別規則不同，同一個 seed 也可能得到不同路徑。
-- **記憶體用量大**：每個 state 都存整張 `dirtyMap`，約佔 6 KB，8,000 回合會累積約 100 萬個 state。8 GB 記憶體不夠完整跑完，建議 8,000 回合準備 16 GB 以上，20,000 回合準備 32 GB 以上。
-- **訓練曲線視窗**：訓練結束後會跳出圖表視窗，關閉後程式才會繼續。沒有圖形介面的環境可以用 `MPLBACKEND=Agg python qlearn_demo.py` 執行。
-- **執行時間**：8,000 回合時，每個 demo 約需 3 到 4 分鐘。
 
 ### 輸出檔案
 
