@@ -41,8 +41,8 @@
 | 撞牆，位置不變 | −1 |
 | 撞障礙物，位置不變 | −1 |
 | 成功移動一步 | −1 |
-| 清到新的髒污格 | 額外 +3 |
-| 清完所有髒污並回到 Home | 額外 +100 |
+| 清到新的髒污格 | +3 |
+| 清完所有髒污並回到 Home | +100 |
 
 清完所有髒污並回到 Home 時 episode 結束；步數達到 `max_episode_len` 時也會中止。
 
@@ -119,16 +119,6 @@ $$Q(S_t,A_t) \leftarrow Q(S_t,A_t) + \alpha\left[R_{t+1} + \gamma Q(S_{t+1},A_{t
   </tr>
 </table>
 
-### 訓練回合數的影響
-
-`qlearn_demo.py` 與 `sarsa_esarsa_demo.py` 目前的設定是 20,000 回合，跑出來的結果和上面不同：
-
-| 訓練回合數 | Q-learning | SARSA |
-| --- | --- | --- |
-| 8,000 | 94 步 | 96 步 |
-| 20,000 | 86 步 | 106 步 |
-
-這些都是單一 seed 的結果，回合數增加不一定讓路徑變短，兩者的差距也不宜過度解讀。
 
 ## 結論
 
@@ -137,17 +127,6 @@ $$Q(S_t,A_t) \leftarrow Q(S_t,A_t) + \alpha\left[R_{t+1} + \gamma Q(S_{t+1},A_{t
 - **Q-learning 較積極，SARSA 較保守**：Q-learning 的步數略少，偏重效率；SARSA 會把探索的風險算進去，步數略多，但較重視路徑安全。
 
 
-### 輸出檔案
-
-| 內容 | Q-learning | SARSA |
-| --- | --- | --- |
-| 初始環境圖 | `vacuum_initial.png` | `vacuum_initial.png` |
-| 訓練曲線 | `qlearning_training_progress.png` | `sarsa_training_progress.png` |
-| 完整 Q-table | `qtable_output.txt`、`.csv` | `sarsa_qtable_output.txt`、`.csv` |
-| 路徑圖 | `gridworld_path.png` | `sarsa_gridworld_path.png` |
-| 動畫 | `vacuum_gridworld_qlearn.gif` | `sarsa_vacuum_gridworld.gif` |
-| 每一步的畫面 | `vacuum_gridworld_qlearn_png_steps/` | `sarsa_vacuum_gridworld_png_steps/` |
-
-## 組員
+## 分組成員
 
 楊明霆、章棋翔、朱立軒、蔣淇
