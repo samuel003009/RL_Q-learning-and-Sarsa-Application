@@ -44,7 +44,7 @@
 | 清到新的髒污格 | +3 |
 | 清完所有髒污並回到 原點 | +100 |
 
-清完所有髒污並回到 原點時 episode 結束；步數達到 `max_episode_len` 時也會中止。
+清完所有髒污並回到 原點時 episode 結束，步數達到 `max_episode_len` 時也會中止。
 
 ### State 與 Action
 
